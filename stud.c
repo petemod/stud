@@ -954,6 +954,14 @@ static void clear_read(struct ev_loop *loop, ev_io *w, int revents) {
     }
     else if (t == 0) {
         LOG("{%s} Connection closed\n", fd == ps->fd_down ? "backend" : "client");
+	/* The next three lines were added by petmod 17-oct-2014 so we can see
+         *  when a client connects in the logs. As C is not my best langauge
+         *  hopefully I have not introduced a memory leek
+         */
+        struct sockaddr_in *sin = (struct sockaddr_in *)&ps->remote_ip;
+        unsigned char *ip = (unsigned char *)&sin->sin_addr.s_addr;
+        LOG("{close} %d.%d.%d.%d \n", ip[0], ip[1], ip[2], ip[3]);
+
         shutdown_proxy(ps, SHUTDOWN_CLEAR);
     }
     else {
@@ -1214,6 +1222,13 @@ static void handle_fatal_ssl_error(proxystate *ps, int err, int backend) {
             perror(backend ? "{backend} [errno] " : "{client} [errno] ");
     else
         ERR("{%s} Unexpected SSL_read error: %d\n", backend ? "backend" : "client" , err);
+   /* The next three lines were added by petmod 17-oct-2014 so we can see
+    *  when a client connects in the logs. As C is not my best langauge
+    *  hopefully I have not introduced a memory leek
+    */
+    struct sockaddr_in *sin = (struct sockaddr_in *)&ps->remote_ip;
+    unsigned char *ip = (unsigned char *)&sin->sin_addr.s_addr;
+    LOG("{close} Connection to %d.%d.%d.%d closed \n", ip[0], ip[1], ip[2], ip[3]); 
     shutdown_proxy(ps, SHUTDOWN_SSL);
 }
 
@@ -1317,6 +1332,14 @@ static void handle_accept(struct ev_loop *loop, ev_io *w, int revents) {
         }
         return;
     }
+
+    /* The next three lines were added by petmod 17-oct-2014 so we can see
+     *  when a client connects in the logs. As C is not my best langauge
+     *  hopefully I have not introduced a memory leek
+     */
+    struct sockaddr_in *sin = (struct sockaddr_in *)&addr;
+    unsigned char *ip = (unsigned char *)&sin->sin_addr.s_addr;
+    LOG("{handle_accept} Connected to %d.%d.%d.%d \n", ip[0], ip[1], ip[2], ip[3]);
 
     int flag = 1;
     int ret = setsockopt(client, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag) );
@@ -1434,6 +1457,14 @@ static void handle_clear_accept(struct ev_loop *loop, ev_io *w, int revents) {
         }
         return;
     }
+
+    /* The next three lines were added by petmod 17-oct-2014 so we can see
+     *  when a client connects in the logs. As C is not my best langauge
+     *  hopefully I have not introduced a memory leek
+     */
+    struct sockaddr_in *sin = (struct sockaddr_in *)&addr;
+    unsigned char *ip = (unsigned char *)&sin->sin_addr.s_addr;
+    LOG("{handle_clear_accept} Connected to %d.%d.%d.%d \n", ip[0], ip[1], ip[2], ip[3]);
 
     int flag = 1;
     int ret = setsockopt(client, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag) );
