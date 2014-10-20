@@ -598,15 +598,22 @@ SSL_CTX *make_ctx(const char *pemfile) {
 #endif
 
     if (CONFIG->ETYPE == ENC_TLS) {
-        ctx = SSL_CTX_new((CONFIG->PMODE == SSL_CLIENT) ?
+    /* petmod applied commit 4ff82d1d2f4771aff45a0e4fd48726595437bb06 from ralish 
+ * 	this addresses the POODLE attack vulnerability */
+    /*    ctx = SSL_CTX_new((CONFIG->PMODE == SSL_CLIENT) ?
                 TLSv1_client_method() : TLSv1_server_method());
     } else if (CONFIG->ETYPE == ENC_SSL) {
         ctx = SSL_CTX_new((CONFIG->PMODE == SSL_CLIENT) ?
                 SSLv23_client_method() : SSLv23_server_method());
-    } else {
+    } else { */
+	ssloptions |= SSL_OP_NO_SSLv3;
+    } else if (CONFIG->ETYPE != ENC_SSL) {
         assert(CONFIG->ETYPE == ENC_TLS || CONFIG->ETYPE == ENC_SSL);
         return NULL; // Won't happen, but gcc was complaining
     }
+    
+    ctx = SSL_CTX_new((CONFIG->PMODE == SSL_CLIENT) ?
+	SSLv23_client_method() : SSLv23_server_method());
 
     SSL_CTX_set_options(ctx, ssloptions);
     SSL_CTX_set_info_callback(ctx, info_callback);
